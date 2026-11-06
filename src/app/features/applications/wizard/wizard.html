@@ -1,1 +1,193 @@
-<p>wizard works!</p>
+<h1 class="h3 mb-3">{{ id() ? 'Edit application' : 'New merchant application' }}</h1>
+
+@if (loading()) {
+  <div class="card-section text-center py-5" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Loading draft…
+  </div>
+} @else if (loadError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+  <a routerLink="/applications" class="btn btn-outline-primary">Back to applications</a>
+} @else {
+  <!-- Progress -->
+  <ol class="list-unstyled d-flex flex-wrap gap-2 mb-3" aria-label="Progress">
+    @for (name of steps; track name; let i = $index) {
+      <li>
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="i === step()"
+          [class.btn-outline-secondary]="i !== step()"
+          [attr.aria-current]="i === step() ? 'step' : null"
+          [disabled]="i > step()"
+          (click)="jumpTo(i)"
+        >
+          {{ i + 1 }}. {{ name }}
+        </button>
+      </li>
+    }
+  </ol>
+
+  <!-- Autosave status: polite live region for progress, assertive alert only on failure -->
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3 small" aria-live="polite">
+    @switch (saveState().kind) {
+      @case ('dirty') {
+        <span class="text-muted">Unsaved changes…</span>
+      }
+      @case ('saving') {
+        <span class="text-muted">Saving draft…</span>
+      }
+      @case ('saved') {
+        <span class="text-success">Draft saved</span>
+      }
+    }
+  </div>
+  @if (saveState(); as s) {
+    @if (s.kind === 'error') {
+      <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+        <span>{{ s.message }} Your answers are still here; nothing was lost.</span>
+        <button type="button" class="btn btn-sm btn-outline-dark" (click)="retrySave()">Retry save</button>
+      </div>
+    }
+  }
+
+  <form class="card-section" [formGroup]="form" (ngSubmit)="step() === steps.length - 1 ? submit() : next()" novalidate>
+    <h2 class="h5 mb-3" #stepHeading tabindex="-1">Step {{ step() + 1 }} of {{ steps.length }}: {{ steps[step()] }}</h2>
+
+    @switch (step()) {
+      @case (0) {
+        <div formGroupName="business" class="row">
+          <div class="col-12 col-md-6"><app-text-field label="Legal business name" formControlName="legalName" autocomplete="organization" /></div>
+          <div class="col-12 col-md-6"><app-text-field label="Doing business as (optional)" formControlName="dba" /></div>
+          <div class="col-12 col-md-6">
+            <app-text-field label="Tax ID" [sensitive]="true" hint="Format: 12-3456789" formControlName="taxId" />
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="mb-3">
+              <label class="form-label" for="industry">Industry <span class="text-danger" aria-hidden="true">*</span></label>
+              <select
+                id="industry"
+                class="form-select"
+                formControlName="industry"
+                aria-required="true"
+                [class.is-invalid]="!!industryError()"
+                [attr.aria-invalid]="industryError() ? 'true' : null"
+                [attr.aria-describedby]="industryError() ? 'industry-err' : null"
+              >
+                <option value="">Select…</option>
+                @for (i of industries; track i) {
+                  <option [value]="i">{{ i }}</option>
+                }
+              </select>
+              @if (industryError(); as e) {
+                <div class="invalid-feedback d-block" id="industry-err" role="alert">{{ e }}</div>
+              }
+            </div>
+          </div>
+          <div class="col-12 col-md-6"><app-text-field label="Business e-mail" type="email" autocomplete="email" formControlName="email" /></div>
+          <div class="col-12 col-md-6"><app-text-field label="Phone" type="tel" autocomplete="tel" formControlName="phone" /></div>
+          <div class="col-12"><app-text-field label="Website (optional)" type="url" hint="https://…" formControlName="website" /></div>
+          <div class="col-12"><app-text-field label="Street address" autocomplete="address-line1" formControlName="line1" /></div>
+          <div class="col-12 col-md-6"><app-text-field label="City" autocomplete="address-level2" formControlName="city" /></div>
+          <div class="col-12 col-md-6"><app-text-field label="Postal code" autocomplete="postal-code" formControlName="postalCode" /></div>
+        </div>
+      }
+
+      @case (1) {
+        <div formArrayName="owners">
+          @if (ownersError(); as e) {
+            <div class="alert alert-danger" role="alert">{{ e }}</div>
+          }
+          @for (owner of owners.controls; track owner; let i = $index) {
+            <fieldset class="border rounded p-3 mb-3" [formGroupName]="i">
+              <legend class="float-none w-auto px-2 fs-6">Owner {{ i + 1 }}</legend>
+              <div class="row">
+                <div class="col-12 col-md-6"><app-text-field label="Full name" formControlName="fullName" /></div>
+                <div class="col-12 col-md-6"><app-text-field label="Title (optional)" formControlName="title" /></div>
+                <div class="col-12 col-md-4">
+                  <app-text-field label="Ownership %" type="number" inputmode="decimal" formControlName="ownershipPercent" />
+                </div>
+                <div class="col-12 col-md-4"><app-text-field label="National ID" [sensitive]="true" formControlName="nationalId" /></div>
+                <div class="col-12 col-md-4"><app-text-field label="E-mail" type="email" formControlName="email" /></div>
+              </div>
+              @if (owners.length > 1) {
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeOwner(i)">
+                  Remove owner {{ i + 1 }}
+                </button>
+              }
+            </fieldset>
+          }
+          @if (owners.length < maxOwners) {
+            <button type="button" class="btn btn-outline-primary" (click)="addOwner()">Add another owner</button>
+          }
+        </div>
+      }
+
+      @case (2) {
+        <div formGroupName="banking" class="row">
+          <div class="col-12"><app-text-field label="Bank name" formControlName="bankName" /></div>
+          <div class="col-12 col-md-6">
+            <app-text-field label="Routing number" inputmode="numeric" [maxlength]="9" hint="9 digits" formControlName="routingNumber" />
+          </div>
+          <div class="col-12 col-md-6">
+            <app-text-field label="Account number" [sensitive]="true" inputmode="numeric" [maxlength]="17" formControlName="accountNumber" />
+          </div>
+          <div class="col-12 col-md-6">
+            <app-text-field label="Confirm account number" [sensitive]="true" inputmode="numeric" [maxlength]="17" formControlName="confirmAccountNumber" />
+            @if (accountMismatch(); as e) {
+              <div class="text-danger small mb-3" role="alert">{{ e }}</div>
+            }
+          </div>
+        </div>
+      }
+
+      @case (3) {
+        @let v = form.getRawValue();
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <p class="mb-0 text-muted">Check everything before submitting. Sensitive values are hidden by default.</p>
+          <button type="button" class="btn btn-sm btn-outline-secondary" [attr.aria-pressed]="showSensitive()" (click)="showSensitive.set(!showSensitive())">
+            {{ showSensitive() ? 'Hide' : 'Show' }} sensitive values
+          </button>
+        </div>
+        <dl class="row">
+          <dt class="col-sm-4">Business</dt>
+          <dd class="col-sm-8">{{ v.business.legalName }}@if (v.business.dba) { ({{ v.business.dba }}) }</dd>
+          <dt class="col-sm-4">Tax ID</dt>
+          <dd class="col-sm-8 font-monospace">{{ showSensitive() ? v.business.taxId : (v.business.taxId | mask) }}</dd>
+          <dt class="col-sm-4">Contact</dt>
+          <dd class="col-sm-8">{{ v.business.email }} · {{ v.business.phone }}</dd>
+          <dt class="col-sm-4">Address</dt>
+          <dd class="col-sm-8">{{ v.business.line1 }}, {{ v.business.city }} {{ v.business.postalCode }}</dd>
+          @for (o of v.owners; track $index) {
+            <dt class="col-sm-4">Owner {{ $index + 1 }}</dt>
+            <dd class="col-sm-8">
+              {{ o.fullName }}, {{ o.ownershipPercent }}% ·
+              <span class="font-monospace">{{ showSensitive() ? o.nationalId : (o.nationalId | mask) }}</span>
+            </dd>
+          }
+          <dt class="col-sm-4">Bank</dt>
+          <dd class="col-sm-8">
+            {{ v.banking.bankName }}, routing {{ v.banking.routingNumber }}, account
+            <span class="font-monospace">{{ showSensitive() ? v.banking.accountNumber : (v.banking.accountNumber | mask) }}</span>
+          </dd>
+        </dl>
+        @if (submitError(); as e) {
+          <div class="alert alert-danger" role="alert">{{ e }}</div>
+        }
+      }
+    }
+
+    <div class="d-flex justify-content-between mt-4">
+      <button type="button" class="btn btn-outline-secondary" [disabled]="step() === 0" (click)="back()">Back</button>
+      @if (step() < steps.length - 1) {
+        <button type="submit" class="btn btn-primary">Next</button>
+      } @else {
+        <button type="submit" class="btn btn-success" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          Submit application
+        </button>
+      }
+    </div>
+  </form>
+}
