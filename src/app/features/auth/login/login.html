@@ -1,0 +1,21 @@
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+    <h1 class="h3 mb-3">Sign in</h1>
+    <form class="card-section" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (error(); as message) {
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+      }
+      <app-text-field label="E-mail" type="email" autocomplete="username" formControlName="email" />
+      <app-text-field label="Password" [sensitive]="true" autocomplete="current-password" formControlName="password" />
+      <button class="btn btn-primary w-100" type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        Sign in
+      </button>
+    </form>
+    <p class="text-muted small mt-3">
+      Local demo only: the mock API prints the demo password in its console when it starts.
+    </p>
+  </div>
+</div>

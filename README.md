@@ -1,59 +1,22 @@
-# MerchantPortal
+# Merchant Portal (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.6.
+A merchant-onboarding portal with role-based access (SALES, REVIEWER, ADMIN): an application dashboard, a multi-step wizard with auto-saved drafts, and a detail page with risk history, review controls and masked sensitive data.
 
-## Development server
+- **Angular 22**: standalone components, built-in control flow, signals, `inject()`, **zoneless** (no zone.js), OnPush by default, `rxResource` for server reads; RxJS and Reactive Forms
+- **Bootstrap 5.3** via SCSS, no Bootstrap JS (interactive parts are plain Angular with ARIA)
+- **Vitest + Angular TestBed** for unit tests; Node's built-in test runner for the mock API
+- A dependency-free **mock API** (`mock-api/`) that enforces the same permissions as the UI
 
-To start a local development server, run:
+## Run it
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Used Node 24 (24.15), Angular 22 needs node version 22+; TypeScript 6 is installed by `npm install`.
 
 ```bash
-ng generate component component-name
+npm install
+
+# terminal 1: mock API on :3000. It prints a random demo password on startup.
+npm run mock
+
+# terminal 2: Angular dev server on :4200 (proxies /api to :3000)
+npm start
 ```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

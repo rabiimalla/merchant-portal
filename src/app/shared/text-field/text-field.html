@@ -1,0 +1,43 @@
+<div class="mb-3">
+  <label class="form-label" [for]="uid">
+    {{ label() }}
+    @if (isRequired()) {
+      <span class="text-danger" aria-hidden="true"> *</span>
+    }
+  </label>
+  <div class="input-group has-validation">
+    <input
+      class="form-control"
+      [class.is-invalid]="!!error()"
+      [id]="uid"
+      [type]="inputType()"
+      [value]="value()"
+      [disabled]="disabled()"
+      [attr.autocomplete]="autocomplete() === 'off' && sensitive() ? 'new-password' : autocomplete()"
+      [attr.inputmode]="inputmode()"
+      [attr.maxlength]="maxlength()"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-required]="isRequired() ? 'true' : null"
+      [attr.aria-describedby]="describedBy()"
+      (input)="onInput($event)"
+      (blur)="onTouched()"
+    />
+    @if (sensitive()) {
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        [attr.aria-pressed]="visible()"
+        [attr.aria-label]="(visible() ? 'Hide ' : 'Show ') + label()"
+        (click)="visible.set(!visible())"
+      >
+        {{ visible() ? 'Hide' : 'Show' }}
+      </button>
+    }
+  </div>
+  @if (hint()) {
+    <div class="form-text" [id]="uid + '-hint'">{{ hint() }}</div>
+  }
+  @if (error(); as message) {
+    <div class="invalid-feedback d-block" [id]="uid + '-err'" role="alert">{{ message }}</div>
+  }
+</div>
