@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { authGuard, guestGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -7,6 +7,12 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     title: 'Sign in',
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'applications',
+    canActivate: [authGuard],
+    // Lazy feature: the whole applications area is its own chunk, behind the auth guard.
+    loadChildren: () => import('./features/applications/applications.routes').then((m) => m.APPLICATION_ROUTES),
   },
   {
     path: 'forbidden',
