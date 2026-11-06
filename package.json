@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "mock": "node mock-api/server.js",
+    "test:api": "node --test mock-api/api.test.js"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
