@@ -1,0 +1,32 @@
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+<div class="row g-2 align-items-end">
+  <div class="col-12 col-md-6">
+    <label class="form-label" for="reviewer">Reviewer</label>
+    <!--
+      The select's value lives in a signal (updated on (change)). Reading select.value straight
+      from the DOM in the template does NOT work with OnPush: nothing marks the view dirty, so
+      the button below would stay disabled after choosing a reviewer.
+    -->
+    <select id="reviewer" class="form-select" #select (change)="selectedId.set(select.value)">
+      <option value="">Select a reviewer…</option>
+      @for (r of reviewers(); track r.id) {
+        <option [value]="r.id" [selected]="r.id === selectedId()">{{ r.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="col-12 col-md-auto">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="saving() || !selectedId() || selectedId() === currentReviewerId()"
+      (click)="assign(selectedId())"
+    >
+      @if (saving()) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
+      {{ currentReviewerId() ? 'Reassign' : 'Assign' }}
+    </button>
+  </div>
+</div>

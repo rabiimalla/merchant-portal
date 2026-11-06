@@ -1,1 +1,153 @@
-<p>detail works!</p>
+@if (errorMessage(); as message) {
+  <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="reload()">Retry</button>
+  </div>
+  <a routerLink="/applications" class="btn btn-outline-primary">Back to applications</a>
+} @else if (application.value(); as app) {
+  <a routerLink="/applications" class="small">&larr; All applications</a>
+
+  <header class="d-flex flex-wrap align-items-start justify-content-between gap-2 my-3">
+    <div>
+      <h1 class="h3 mb-1">{{ app.data.business.legalName }}</h1>
+      <p class="text-muted mb-0 small">
+        {{ app.id }} · created by {{ app.createdByName }} · updated {{ app.updatedAt | date: 'medium' }}
+        @if (app.assignedReviewer) {
+          · reviewer {{ app.assignedReviewer.name }}
+        }
+      </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <app-status-badge [status]="app.status" />
+      @if (app.permissions.canEdit) {
+        <a class="btn btn-sm btn-outline-primary" [routerLink]="['/applications', app.id, 'edit']">Edit draft</a>
+      }
+    </div>
+  </header>
+
+  <div class="d-grid gap-3">
+    <section class="card-section" aria-labelledby="sec-business">
+      <h2 class="h5" id="sec-business">Business</h2>
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Legal name</dt><dd class="col-sm-9">{{ app.data.business.legalName }}</dd>
+        <dt class="col-sm-3">Doing business as</dt><dd class="col-sm-9">{{ app.data.business.dba || '—' }}</dd>
+        <dt class="col-sm-3">Tax ID</dt>
+        <dd class="col-sm-9">
+          <app-sensitive-field
+            label="Tax ID"
+            field="taxId"
+            [applicationId]="app.id"
+            [value]="app.data.business.taxId"
+            [serverMasked]="app.sensitiveMasked"
+            [canReveal]="app.permissions.canReveal"
+          />
+        </dd>
+        <dt class="col-sm-3">Industry</dt><dd class="col-sm-9">{{ app.data.business.industry }}</dd>
+        <dt class="col-sm-3">Contact</dt><dd class="col-sm-9">{{ app.data.business.email }} · {{ app.data.business.phone }}</dd>
+        <dt class="col-sm-3">Address</dt>
+        <dd class="col-sm-9 mb-0">{{ app.data.business.line1 }}, {{ app.data.business.city }} {{ app.data.business.postalCode }}</dd>
+      </dl>
+    </section>
+
+    <section class="card-section" aria-labelledby="sec-owners">
+      <h2 class="h5" id="sec-owners">Owners</h2>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <caption class="visually-hidden">Beneficial owners</caption>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Ownership</th>
+              <th scope="col">National ID</th>
+              <th scope="col" class="d-none d-md-table-cell">E-mail</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (owner of app.data.owners; track $index) {
+              <tr>
+                <th scope="row" class="fw-normal">{{ owner.fullName }}<div class="text-muted small">{{ owner.title }}</div></th>
+                <td>{{ owner.ownershipPercent }}%</td>
+                <td>
+                  <app-sensitive-field
+                    [label]="'National ID of ' + owner.fullName"
+                    field="ownerNationalId"
+                    [index]="$index"
+                    [applicationId]="app.id"
+                    [value]="owner.nationalId"
+                    [serverMasked]="app.sensitiveMasked"
+                    [canReveal]="app.permissions.canReveal"
+                  />
+                </td>
+                <td class="d-none d-md-table-cell">{{ owner.email }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card-section" aria-labelledby="sec-banking">
+      <h2 class="h5" id="sec-banking">Banking</h2>
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Bank</dt><dd class="col-sm-9">{{ app.data.banking.bankName }}</dd>
+        <dt class="col-sm-3">Routing number</dt><dd class="col-sm-9">{{ app.data.banking.routingNumber }}</dd>
+        <dt class="col-sm-3">Account number</dt>
+        <dd class="col-sm-9 mb-0">
+          <app-sensitive-field
+            label="Account number"
+            field="accountNumber"
+            [applicationId]="app.id"
+            [value]="app.data.banking.accountNumber"
+            [serverMasked]="app.sensitiveMasked"
+            [canReveal]="app.permissions.canReveal"
+          />
+        </dd>
+      </dl>
+    </section>
+
+    <section class="card-section" aria-labelledby="sec-history">
+      <h2 class="h5" id="sec-history">Risk history</h2>
+      @if (app.riskHistory.length === 0) {
+        <p class="text-muted mb-0">No activity yet.</p>
+      } @else {
+        <ol class="list-unstyled mb-0">
+          @for (event of app.riskHistory; track event.id) {
+            <li class="border-start border-3 ps-3 pb-3">
+              <div class="fw-semibold">
+                {{ eventLabel(event) }}
+                @if (event.riskLevel) {
+                  <span class="badge ms-1" [class]="event.riskLevel === 'HIGH' ? 'text-bg-danger' : event.riskLevel === 'MEDIUM' ? 'text-bg-warning' : 'text-bg-success'">
+                    {{ event.riskLevel }} risk
+                  </span>
+                }
+              </div>
+              <div class="text-muted small">{{ event.byName }} · {{ event.at | date: 'medium' }}</div>
+              @if (event.note) {
+                <div>{{ event.note }}</div>
+              }
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <!-- Rendered only when the API grants the capability: SALES never get the review controls. -->
+    @if (app.permissions.canDecide) {
+      <section class="card-section" aria-labelledby="sec-review">
+        <h2 class="h5" id="sec-review">Record a decision</h2>
+        <app-review-panel [applicationId]="app.id" (decided)="reload()" />
+      </section>
+    }
+
+    @if (app.permissions.canAssign) {
+      <section class="card-section" aria-labelledby="sec-assign">
+        <h2 class="h5" id="sec-assign">Assignment</h2>
+        <app-assignment-panel [applicationId]="app.id" [currentReviewerId]="app.assignedReviewer?.id ?? null" (assigned)="reload()" />
+      </section>
+    }
+  </div>
+} @else {
+  <div class="card-section text-center py-5" role="status">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Loading application…
+  </div>
+}

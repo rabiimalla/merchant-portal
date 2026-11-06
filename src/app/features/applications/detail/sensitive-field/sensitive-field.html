@@ -1,0 +1,18 @@
+<span class="d-inline-flex align-items-center gap-2 flex-wrap">
+  <span class="font-monospace">{{ shown() }}</span>
+  @if (canToggle()) {
+    @if (revealedValue() !== null) {
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="hide()">
+        Hide<span class="visually-hidden"> {{ label() }}</span>
+      </button>
+    } @else {
+      <button type="button" class="btn btn-sm btn-outline-primary" [disabled]="loading()" (click)="reveal()">
+        Reveal<span class="visually-hidden"> {{ label() }}</span>
+      </button>
+    }
+  }
+  @if (error(); as message) {
+    <span class="text-danger small" role="alert">{{ message }}</span>
+  }
+</span>
+<span class="visually-hidden" aria-live="polite">{{ revealedValue() !== null ? label() + ' is now visible' : '' }}</span>

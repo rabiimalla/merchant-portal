@@ -1,0 +1,49 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as message) {
+      <div class="alert alert-danger" role="alert">{{ message }}</div>
+    }
+
+    <fieldset class="mb-3">
+      <legend class="form-label fs-6">Decision <span class="text-danger" aria-hidden="true">*</span></legend>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="dec-approve" value="APPROVED" formControlName="decision" />
+        <label class="form-check-label" for="dec-approve">Approve</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="dec-reject" value="REJECTED" formControlName="decision" />
+        <label class="form-check-label" for="dec-reject">Reject</label>
+      </div>
+      @if (err('decision', 'Decision'); as e) {
+        <div class="text-danger small" role="alert">{{ e }}</div>
+      }
+    </fieldset>
+
+    <div class="mb-3">
+      <label class="form-label" for="risk-level">Risk level <span class="text-danger" aria-hidden="true">*</span></label>
+      <select id="risk-level" class="form-select" formControlName="riskLevel" [attr.aria-invalid]="err('riskLevel', 'Risk level') ? 'true' : null">
+        <option value="">Select…</option>
+        @for (level of levels; track level) {
+          <option [value]="level">{{ level }}</option>
+        }
+      </select>
+      @if (err('riskLevel', 'Risk level'); as e) {
+        <div class="text-danger small" role="alert">{{ e }}</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="decision-note">Note <span class="text-danger" aria-hidden="true">*</span></label>
+      <textarea id="decision-note" class="form-control" rows="3" formControlName="note" [attr.aria-invalid]="err('note', 'Note') ? 'true' : null"></textarea>
+      <div class="form-text">At least 10 characters. Visible in the risk history.</div>
+      @if (err('note', 'Note'); as e) {
+        <div class="text-danger small" role="alert">{{ e }}</div>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+      @if (submitting()) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
+      Record decision
+    </button>
+  </form>
